@@ -1,0 +1,8 @@
+git
+-----------------------------
+1) fix logging (module level)
+2) подружить cfg with pydantic
+3) minor fixes
+4) neyronka !!!!!!
+5) hyperparameter tuning
+6) explainability 

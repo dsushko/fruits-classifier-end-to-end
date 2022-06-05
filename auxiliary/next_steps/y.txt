@@ -1,0 +1,5 @@
+1) logging
+2) click
+3) configs
+4) read explainable ai + поискать интернеты (integrated gradients???)
+   хабр - статья explainability dl

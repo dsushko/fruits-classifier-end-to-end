@@ -1,0 +1,13 @@
+---
+classifier:
+  name: BaselineClassifier
+  params: ~
+preprocessing:
+  ctor_params:
+    max_brightness: 255
+    resize_value: 128
+  steps:
+    - center_crop
+    - resize
+    - normalize
+    - flatten
