@@ -5,9 +5,8 @@ import cv2
 from model.config import ModelConfig
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import LabelEncoder
 from utils.utils import EligibleModules
-from preprocessing.preprocessor import FruitsPreprocessor
+from model.preprocessing.preprocessor import FruitsPreprocessor
 from utils.validator import ClassifierValidator
 from utils.utils import load_cfg
 from utils.logger import get_logger
@@ -30,8 +29,6 @@ class ModelRunner:
     def process_data_pair_for_classification(self, X, y, preprocessor):
         # check whether we can miss encoding
         X = preprocessor.transform(X)
-        #self.labels_encoder = LabelEncoder()
-        #y = self.labels_encoder.fit_transform(y)
         return X, y
 
 
@@ -78,7 +75,6 @@ class ModelRunner:
     def run(self):
         self._logger.info('Pipeline start')
 
-        # warning: path + str = ?
         train_dir = self.data_folder + '/train/'
         validation_dir = self.data_folder + '/test/'
 
