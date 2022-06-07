@@ -1,9 +1,8 @@
 ---
 classifier:
-  name: BaselineClassifier
-  params: ~
+  name: 'BaselineClassifier'
 preprocessing:
-  ctor_params:
+  params:
     max_brightness: 255
     resize_value: 128
   steps:

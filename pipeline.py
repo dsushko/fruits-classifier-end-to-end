@@ -1,11 +1,13 @@
 import os
 
 import cv2
+
+from model.config import ModelConfig
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from utils.utils import EligibleModules
-from preprocessor import FruitsPreprocessor
+from preprocessing.preprocessor import FruitsPreprocessor
 from utils.validator import ClassifierValidator
 from utils.utils import load_cfg
 from utils.logger import get_logger
@@ -13,7 +15,7 @@ from utils.logger import get_logger
 class ModelRunner:
 
     def __init__(self, cfg_path, data_folder, validate=True):
-        self._cfg = load_cfg(cfg_path)
+        self._cfg = ModelConfig.parse_obj(load_cfg(cfg_path)).dict()
         self._logger = get_logger('fruits-classifier')
 
         self.data_folder = data_folder
@@ -82,7 +84,7 @@ class ModelRunner:
 
         prepr_cfg = self._cfg['preprocessing']
         preprocessor = FruitsPreprocessor(prepr_cfg)
-        self._logger.debug(f'Preprocessor\'s params:{prepr_cfg["ctor_params"]}')
+        self._logger.debug(f'Preprocessor\'s params:{prepr_cfg["params"]}')
         self._logger.debug(f'Preprocessor\'s steps:{prepr_cfg["steps"]}')
         self.prepare_train_test(train_dir, validation_dir, preprocessor=preprocessor)
 

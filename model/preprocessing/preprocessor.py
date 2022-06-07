@@ -4,7 +4,7 @@ import numpy as np
 class FruitsPreprocessor:
 
     def __init__(self, cfg):
-        params = cfg['ctor_params'] or {}
+        params = cfg['params'] or {}
         for param, value in params.items():
             setattr(self, param, value)
         self.steps = cfg['steps']
