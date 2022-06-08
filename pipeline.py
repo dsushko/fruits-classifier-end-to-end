@@ -1,4 +1,6 @@
+from colorsys import rgb_to_yiq
 import os
+from tkinter import image_names
 
 import cv2
 
@@ -32,10 +34,15 @@ class ModelRunner:
         return X, y
 
 
-    def read_imgs_and_make_labels(self, directory):
-        # ???? investigate if it's the best solution
-        X = []
-        y = []
+    def read_imgs_and_make_labels(self, directory, preprocessor):
+
+        images_count = 0
+        for (dirpath, dirnames, filenames) in os.walk(directory):
+            images_count += len([os.path. join(dirpath, file) for file in filenames])
+        
+        X = np.array((images_count, preprocessor.resize_value, preprocessor.resize_value))
+        y = np.array((images_count,))
+        curr_img_ind = 0
         for label in os.listdir(directory):
             for pic in os.listdir(directory + label):
                 try:
@@ -44,11 +51,11 @@ class ModelRunner:
                     bytes = bytearray(stream.read())
                     numpyarray = np.asarray(bytes, dtype=np.uint8)
                     bgrImage = cv2.imdecode(numpyarray, cv2.IMREAD_UNCHANGED)
-
-                    X.append(cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB))
-                    y.append(label)
+                    rgbImage = cv2.cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB)
+                    X[curr_img_ind:,:] = preprocessor.unificate_one(rgbImage)
+                    y[curr_img_ind] = label
                 except BaseException as err:
-                    self._logger.error(f'Couldn\'t open file {curr_img_path}: {err}')
+                    self._logger.error(f'Error while processing file {curr_img_path}: {err}')
                     pass
         return X, y
 

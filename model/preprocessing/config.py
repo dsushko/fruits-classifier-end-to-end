@@ -7,7 +7,8 @@ class PreprocessingParamsConfig(BaseModel):
     resize_value: int = Field(default=128)
 
 class PreprocessingConfig(BaseModel):
-    steps: List[str] = Field()
+    unification_steps: List[str] = Field()
+    processing_steps: Optional[List[str]] = Field(default=[])
     params: Optional[PreprocessingParamsConfig] = \
         Field(default=PreprocessingParamsConfig())
 

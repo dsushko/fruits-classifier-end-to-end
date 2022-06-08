@@ -7,7 +7,8 @@ class FruitsPreprocessor:
         params = cfg['params'] or {}
         for param, value in params.items():
             setattr(self, param, value)
-        self.steps = cfg['steps']
+        self.unification_steps = cfg['unification_steps']
+        self.processing_steps = cfg['processing_steps']
         pass
     
     def resize(self, img):
@@ -29,9 +30,14 @@ class FruitsPreprocessor:
     def normalize(self, img):
         return cv2.normalize(img, None, 0, self.max_brightness, cv2.NORM_MINMAX)
         
-    def preprocess_one(self, img):
-        for preprocess_step in self.steps:
-            img = getattr(self, preprocess_step)(img)
+    def process_one(self, img):
+        for process_step in self.processing_steps:
+            img = getattr(self, process_step)(img)
+        return img
+
+    def unificate_one(self, img):
+        for unification_step in self.unification_steps:
+            img = getattr(self, unification_step)(img)
         return img
 
     def flatten(self, img):

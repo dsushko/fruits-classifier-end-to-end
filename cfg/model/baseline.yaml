@@ -5,8 +5,9 @@ preprocessing:
   params:
     max_brightness: 255
     resize_value: 128
-  steps:
+  unification_steps:
     - center_crop
     - resize
+  processing_steps:
     - normalize
     - flatten
