@@ -44,4 +44,4 @@ class FruitsPreprocessor:
         return img.flatten()
 
     def transform(self, imgs):
-        return np.array([self.preprocess_one(img) for img in imgs])
+        return np.array([self.process_one(img) for img in imgs])

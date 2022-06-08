@@ -40,8 +40,8 @@ class ModelRunner:
         for (dirpath, dirnames, filenames) in os.walk(directory):
             images_count += len([os.path. join(dirpath, file) for file in filenames])
         
-        X = np.array((images_count, preprocessor.resize_value, preprocessor.resize_value))
-        y = np.array((images_count,))
+        X = np.empty((images_count, preprocessor.resize_value, preprocessor.resize_value, 3))
+        y = np.empty((images_count,), dtype=object)
         curr_img_ind = 0
         for label in os.listdir(directory):
             for pic in os.listdir(directory + label):
@@ -52,18 +52,18 @@ class ModelRunner:
                     numpyarray = np.asarray(bytes, dtype=np.uint8)
                     bgrImage = cv2.imdecode(numpyarray, cv2.IMREAD_UNCHANGED)
                     rgbImage = cv2.cv2.cvtColor(bgrImage, cv2.COLOR_BGR2RGB)
-                    X[curr_img_ind:,:] = preprocessor.unificate_one(rgbImage)
+                    X[curr_img_ind,:,:,:] = preprocessor.unificate_one(rgbImage)
                     y[curr_img_ind] = label
                 except BaseException as err:
-                    self._logger.error(f'Error while processing file {curr_img_path}: {err}')
-                    pass
+                   self._logger.error(f'Error while processing file {curr_img_path}: {err}')
+                   pass
         return X, y
 
 
     def prepare_train_test(self, train_dir, validation_dir, preprocessor):
         self._logger.info('Reading train and test data...')
-        train_X, train_y = self.read_imgs_and_make_labels(train_dir)
-        test_X, test_y = self.read_imgs_and_make_labels(validation_dir)
+        train_X, train_y = self.read_imgs_and_make_labels(train_dir, preprocessor)
+        test_X, test_y = self.read_imgs_and_make_labels(validation_dir, preprocessor)
 
         self._logger.info('Processing train and test data...')
         train_X, train_y = \
@@ -88,7 +88,8 @@ class ModelRunner:
         prepr_cfg = self._cfg['preprocessing']
         preprocessor = FruitsPreprocessor(prepr_cfg)
         self._logger.debug(f'Preprocessor\'s params:{prepr_cfg["params"]}')
-        self._logger.debug(f'Preprocessor\'s steps:{prepr_cfg["steps"]}')
+        self._logger.debug(f'Preprocessor\'s unification steps:{prepr_cfg["unification_steps"]}')
+        self._logger.debug(f'Preprocessor\'s processing steps:{prepr_cfg["processing_steps"]}')
         self.prepare_train_test(train_dir, validation_dir, preprocessor=preprocessor)
 
         classifier_name = self._cfg['classifier']['name']
@@ -97,7 +98,7 @@ class ModelRunner:
         self._logger.info(f'Initializing {classifier_name} classifier...')
 
         classifier = EligibleModules().classifiers[classifier_name](**classifier_params)
-
+        print(self.train_X.shape, self.train_y.shape)
         self._logger.info('Fitting classifier...')
         classifier.fit(self.train_X, self.train_y)
         self._logger.info('Predicting...')

@@ -11,9 +11,3 @@ class PreprocessingConfig(BaseModel):
     processing_steps: Optional[List[str]] = Field(default=[])
     params: Optional[PreprocessingParamsConfig] = \
         Field(default=PreprocessingParamsConfig())
-
-    @validator('steps')
-    def check_presence(cls, v):
-        if v is None:
-            raise ValueError(f'{v} is not defined in cfg')
-        return v

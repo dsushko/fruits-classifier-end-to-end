@@ -1,0 +1,8 @@
+2022-06-07 20:36:26,189- fruits-classifier - INFO - Pipeline start
+2022-06-07 20:36:26,192- fruits-classifier - DEBUG - Preprocessor's params:{'max_brightness': 255, 'resize_value': 128}
+2022-06-07 20:36:26,193- fruits-classifier - DEBUG - Preprocessor's steps:['center_crop', 'resize', 'normalize', 'flatten']
+2022-06-07 20:36:26,193- fruits-classifier - INFO - Reading train and test data...
+2022-06-07 21:13:36,586- fruits-classifier - INFO - Pipeline start
+2022-06-07 21:13:36,587- fruits-classifier - DEBUG - Preprocessor's params:{'max_brightness': 255, 'resize_value': 128}
+2022-06-07 21:13:36,589- fruits-classifier - DEBUG - Preprocessor's steps:['center_crop', 'resize', 'normalize', 'flatten']
+2022-06-07 21:13:36,634- fruits-classifier - INFO - Reading train and test data...
