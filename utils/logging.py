@@ -2,14 +2,24 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import sys
 
-def _set_logging():
-    FORMATTER = logging.Formatter('%(asctime)s - %(filename)s - %(levelname)s - %(message)s')
+def init_logger(name: str = None) -> None:
+    """
+    Initializes root logger for package.
+
+    Args:
+        name: package name.
+        log_format: logging format.
+    """
+
+    if not name:
+        name = __name__
+    FORMATTER = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     LOG_FILE = 'log.txt'
-    logging.root.setLevel(logging.DEBUG)
-    console_handler = logging.root.StreamHandler(sys.stdout)
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(FORMATTER)
-    logging.root.addHandler(console_handler)
+    logger.addHandler(console_handler)
     file_handler = TimedRotatingFileHandler(LOG_FILE, when='midnight')
     file_handler.setFormatter(FORMATTER)
-    logging.root.addHandler(file_handler)
-
+    logger.addHandler(file_handler)
