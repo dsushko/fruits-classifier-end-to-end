@@ -1,0 +1,21 @@
+---
+classifier:
+  name: 'VGG16Classifier'
+  params: 
+     image_size: 128
+     batch_size: 50
+     loss: 'categorical_crossentropy'
+     optimizer: 'adam'
+     epochs: 20
+     enable_early_stopping: true
+preprocessing:
+  params:
+    max_brightness: 255
+    resize_value: 128
+  unification_steps:
+    - center_crop
+    - resize
+  processing_steps:
+    - normalize
+encode_labels: false
+

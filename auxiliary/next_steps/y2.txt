@@ -1,8 +1,8 @@
-git
+git - done - ?
 -----------------------------
-1) fix logging (module level)
+1) fix logging (module level) - done ?
 2) подружить cfg with pydantic - done
-3) minor fixes
+3) minor fixes - done
 4) neyronka !!!!!!
 5) hyperparameter tuning
 6) explainability 

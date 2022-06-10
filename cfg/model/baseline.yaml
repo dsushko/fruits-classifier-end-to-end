@@ -11,3 +11,4 @@ preprocessing:
   processing_steps:
     - normalize
     - flatten
+encode_labels: true

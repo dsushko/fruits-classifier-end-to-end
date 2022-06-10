@@ -1,5 +1,5 @@
 from sklearn import svm
-from utils.utils import EligibleModules
+from utils.eligiblemodules import EligibleModules
 
 @EligibleModules.register_classifier
 class BaselineClassifier:

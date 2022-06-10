@@ -3,7 +3,7 @@ from pipeline import ModelRunner
 
 
 @click.command('fruits-classifier')
-@click.argument('build', type=click.Choice(['baseline']))
+@click.argument('build', type=click.Choice(['baseline', 'vgg16']))
 @click.option(
     '--validate', '-v',
     help='Defines whether to make validation step',

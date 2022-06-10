@@ -9,7 +9,7 @@ from model.config import ModelConfig
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
-from utils.utils import EligibleModules
+from utils.eligiblemodules import EligibleModules
 from model.preprocessing.preprocessor import FruitsPreprocessor
 from utils.validator import ClassifierValidator
 from utils.utils import load_cfg
@@ -33,10 +33,10 @@ class ModelRunner:
 
 
     def process_data_pair_for_classification(self, X, y, preprocessor):
-        # check whether we can miss encoding
         X = preprocessor.transform(X)
-        self.label_encoder = LabelEncoder()
-        y = self.label_encoder.fit_transform(y)
+        if self._cfg['encode_labels']:
+            self.label_encoder = LabelEncoder()
+            y = self.label_encoder.fit_transform(y)
         return X, y
 
 
@@ -100,7 +100,7 @@ class ModelRunner:
         self.prepare_train_test(train_dir, validation_dir, preprocessor=preprocessor)
 
         classifier_name = self._cfg['classifier']['name']
-        classifier_params = self._cfg['classifier']['params'] or {}
+        classifier_params = self._cfg['classifier']['params']
 
         logger.info(f'Initializing {classifier_name} classifier...')
 
