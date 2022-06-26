@@ -1,0 +1,5 @@
+partial vs lambda ???????
+end documentation
+hyperopt
+сертификации
+learn design patterns - шаблоны проектирования - банда четырех

@@ -29,7 +29,12 @@ class FruitsPreprocessor:
 
     def normalize(self, img):
         return cv2.normalize(img, None, 0, self.max_brightness, cv2.NORM_MINMAX)
-        
+    
+    def preprocess_one(self, img):
+        img = self.unificate_one(img)
+        img = self.process_one(img)
+        return img
+
     def process_one(self, img):
         for process_step in self.processing_steps:
             img = getattr(self, process_step)(img)

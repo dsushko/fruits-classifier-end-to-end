@@ -7,6 +7,7 @@ class GlobalParams:
     data_path: str = './data/'
     models_cfg_path: str = './cfg/model/'
     explainability_results: str = './explainability_demo/'
+    saved_models_folder: str = '/saved_models/'
 
     @staticmethod 
     def count_classes():
@@ -15,6 +16,10 @@ class GlobalParams:
     @staticmethod
     def build_cfg_path():
         return GlobalParams.models_cfg_path + GlobalParams.build + '.yaml'
+
+    #@staticmethod
+    #def build_local_model_path():
+    #    return os.path.join(GlobalParams().data_path, '/saved_models/', build, build + 'json')
 
     def __new__(cls):
         if GlobalParams.__instance is None:
