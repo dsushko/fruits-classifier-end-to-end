@@ -6,7 +6,7 @@ classifier:
      batch_size: 50
      loss: 'categorical_crossentropy'
      optimizer: 'adam'
-     epochs: 20
+     epochs: 1
      enable_early_stopping: true
 preprocessing:
   params:

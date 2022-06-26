@@ -1,0 +1,3 @@
+1) hyperparameter tuning
+2) explainability (comgrad, integrated gradients, lime)
+3) documentation

@@ -10,7 +10,7 @@ from model.classifiers.config import KerasNetworkConfig
 from sklearn.utils import shuffle
 
 from utils.eligiblemodules import EligibleModules
-
+from utils.globalparams import GlobalParams
 
 @EligibleModules.register_classifier
 class VGG16Classifier:
@@ -18,7 +18,7 @@ class VGG16Classifier:
     def __init__(self, **kwargs):
         for param, val in KerasNetworkConfig.parse_obj(kwargs):
             setattr(self, param, val)
-        self.classes = 31
+        self.classes = GlobalParams().num_classes
 
         if not os.path.exists('data/saved_models/vgg16.json'):
             self.download_network()
@@ -63,7 +63,7 @@ class VGG16Classifier:
         self.callbacks = []
         if self.enable_early_stopping:
             self.callbacks.append(
-                tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3)
+                tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
             )
         model.compile(
             loss=self.loss, 

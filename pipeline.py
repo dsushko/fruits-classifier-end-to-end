@@ -1,7 +1,5 @@
-from colorsys import rgb_to_yiq
 import logging
 import os
-from tkinter import image_names
 
 import cv2
 
@@ -10,21 +8,26 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from utils.eligiblemodules import EligibleModules
+from utils.globalparams import GlobalParams
 from model.preprocessing.preprocessor import FruitsPreprocessor
 from utils.validator import ClassifierValidator
 from utils.utils import load_cfg
 from utils.logging import init_logger
+from explainability.lime_explaining import LimeExplainer
 
 init_logger(__name__)
 logger = logging.getLogger(__name__)
 
 class ModelRunner:
 
-    def __init__(self, cfg_path, data_folder, validate=True):
-        self._cfg = ModelConfig.parse_obj(load_cfg(cfg_path)).dict()
+    def __init__(self, build, validate_flag=True):
 
-        self.data_folder = data_folder
-        self.validate = validate
+        self._cfg = ModelConfig.parse_obj(
+            load_cfg(GlobalParams().model_cfg_path)
+        ).dict()
+
+        self.data_folder = GlobalParams().data_folder
+        self.validate_flag = validate_flag
 
         self.train_X = None
         self.train_y = None
@@ -99,6 +102,8 @@ class ModelRunner:
         logger.debug(f'Preprocessor\'s processing steps:{prepr_cfg["processing_steps"]}')
         self.prepare_train_test(train_dir, validation_dir, preprocessor=preprocessor)
 
+
+
         classifier_name = self._cfg['classifier']['name']
         classifier_params = self._cfg['classifier']['params']
 
@@ -110,7 +115,8 @@ class ModelRunner:
         logger.info('Predicting...')
         pred_y = classifier.predict(self.test_X)
 
-        if self.validate:
+
+        if self.validate_flag:
             logger.info('Validate option was chosen, validating model...')
             validator = ClassifierValidator()
             logger.info('Validating...')
@@ -119,5 +125,11 @@ class ModelRunner:
             logger.info(f'Validation results: {val_stats}')
             logger.debug(f'Confusion matrix:')
             for matrix_ind in range(len(validator.confusion_matrix)):
-                logger.debug(list(validator.confusion_matrix[matrix_ind]))
+                logger.debug(f'{validator.cf_labels[matrix_ind]}: {list(validator.confusion_matrix[matrix_ind])}')
+
+        logger.info('Creating explainability examples')
+        explainer = LimeExplainer()
+
+        explainer.make_explainability_expamples(preprocessor, classifier)
+
         logger.info('Done.')
