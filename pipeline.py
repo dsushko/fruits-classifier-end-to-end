@@ -5,7 +5,10 @@ import cv2
 import pickle
 
 from model.config import ModelConfig
+
 import numpy as np
+import pandas as pd
+
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
 from utils.eligiblemodules import EligibleModules
@@ -22,14 +25,23 @@ logger = logging.getLogger(__name__)
 
 class ModelRunner:
 
-    def __init__(self, mode, validate_flag=True):
+    def __init__(self, mode, validate_flag=True, explainability_path=None):
         self.mode = mode
         self._cfg = ModelConfig.parse_obj(
             load_cfg(GlobalParams().build_cfg_path())
         ).dict()
 
+        classifier_name = self._cfg['classifier']['name']
+        classifier_params = self._cfg['classifier']['params']
+
+        logger.info(f'Initializing {classifier_name}...')
+
+        self.classifier = \
+            EligibleModules().classifiers[classifier_name](**classifier_params)
+
         self.data_path = GlobalParams().data_path
         self.validate_flag = validate_flag
+        self.img_path_to_explain = explainability_path
 
         self.train_X = None
         self.train_y = None
@@ -44,7 +56,7 @@ class ModelRunner:
             y = self.label_encoder.fit_transform(y)
         return X, y
 
-    def read_imgs_and_make_labels(self, directory, preprocessor):
+    def read_imgs_and_make_labels(self, directory, preprocessor, with_filenames=False):
 
         images_count = 0
         for (dirpath, dirnames, filenames) in os.walk(directory):
@@ -52,6 +64,8 @@ class ModelRunner:
         
         X = np.empty((images_count, preprocessor.resize_value, preprocessor.resize_value, 3))
         y = np.empty((images_count,), dtype=object)
+        if with_filenames:
+            filenames = np.empty((images_count,), dtype=object)
         curr_img_ind = 0
         for label in os.listdir(directory):
             for pic in os.listdir(directory + label):
@@ -60,42 +74,40 @@ class ModelRunner:
                     rgb_image = read_rgb_image(curr_img_path)
                     X[curr_img_ind,:,:,:] = preprocessor.unificate_one(rgb_image)
                     y[curr_img_ind] = label
+                    if with_filenames:
+                        filenames[curr_img_ind] = curr_img_path
                     curr_img_ind += 1
                 except BaseException as err:
                    logger.error(f'Error while processing file {curr_img_path}: {err}')
                    pass
+        if with_filenames:
+            return X[:curr_img_ind,:,:,:], y[:curr_img_ind], filenames[:curr_img_ind]
         return X[:curr_img_ind,:,:,:], y[:curr_img_ind]
 
 
-    def prepare_train_test(self, train_dir, validation_dir, preprocessor):
-        logger.info('Reading train and test data...')
-        train_X, train_y = self.read_imgs_and_make_labels(train_dir, preprocessor)
-        test_X, test_y = self.read_imgs_and_make_labels(validation_dir, preprocessor)
+    def prepare_data_from_folder(self, dir, preprocessor, with_filenames=False):
+        logger.info('Reading data from folder...')
 
-        logger.info('Processing train and test data...')
-        train_X, train_y = \
-            self.process_data_pair_for_classification(train_X, train_y, preprocessor)
-        test_X, test_y = \
-            self.process_data_pair_for_classification(test_X, test_y, preprocessor)
+        if with_filenames:
+            X, y, filenames = \
+                self.read_imgs_and_make_labels(dir, preprocessor, with_filenames=True)
+        else:
+            X, y = self.read_imgs_and_make_labels(dir, preprocessor)
 
-        logger.info('Processing train and test data finished')
+        logger.info('Processing data from folder...')
+        X, y = self.process_data_pair_for_classification(X, y, preprocessor)
 
-        self.train_X = train_X
-        self.train_y = train_y
-        self.test_X = test_X
-        self.test_y = test_y
+        logger.info('Processing folder data finished')
+
+        if with_filenames:
+            return X, y, filenames
+        return X, y
+
 
     def train(self):
-        classifier_name = self._cfg['classifier']['name']
-        classifier_params = self._cfg['classifier']['params']
-
-        logger.info(f'Initializing {classifier_name}...')
-
-        self.classifier = EligibleModules().classifiers[classifier_name](**classifier_params)
         logger.info('Fitting classifier...')
         self.classifier.fit(self.train_X, self.train_y)
         self.save_clf()
-        self.predict()
 
     def get_clf_files_path(self):
         classifier_name = GlobalParams().build
@@ -103,20 +115,25 @@ class ModelRunner:
         return os.path.join(data_storage, 'saved_models', classifier_name)
     
     def save_clf(self):
-        self.classifier.save_clf()
+        return self.classifier.save_clf()
 
     def load_clf(self):
-        path = self.get_clf_files_path()
-        return EligibleModules().classifiers[GlobalParams().build].load_clf(path)
+        return self.classifier.load_clf()
 
     def predict(self):
         logger.info('Predicting...')
         self.pred_y = self.classifier.predict(self.test_X)
+        self.save_predictions()
 
-    def explainability(self):
-        logger.info('Creating explainability examples')
+    def save_predictions(self):
+        pd.DataFrame([self.predict_filenames, self.pred_y]).T \
+            .to_csv('preds.csv', index=False)
+
+    def explainability(self, img_path):
+        logger.info('Explaining given example')
         explainer = LimeExplainer()
-        explainer.make_explainability_expamples(
+        explainer.make_explainability_example(
+            img_path,
             self.preprocessor, 
             self.classifier
         )
@@ -133,32 +150,43 @@ class ModelRunner:
 
     def launch_selected_mode(self):
         if self.mode == 'train':
-            getattr(self, self.mode)()
-        if self.mode == 'predict' or self.mode == 'explainability':
+            train_dir = self.data_path + '/train/'
+
+            self.train_X, self.train_y = \
+                self.prepare_data_from_folder(train_dir, preprocessor=self.preprocessor)
+
+            self.train()
+        if self.mode == 'predict':
+            validation_dir = self.data_path + '/test/'
+
+            self.test_X, self.test_y, self.predict_filenames = \
+                self.prepare_data_from_folder(
+                    validation_dir, 
+                    preprocessor=self.preprocessor,
+                    with_filenames=True
+                )
+
             self.classifier = self.load_clf()
-            getattr(self, self.mode)()
+            self.predict()
+
+            if self.validate_flag:
+                logger.info('Validate option was chosen, validating model...')
+                self.validate()
+        if self.mode == 'explainability':
+            self.classifier = self.load_clf()
+            self.explainability(self.img_path_to_explain)
+        if self.mode == 'tuning':
+            pass
 
     def run(self):
         logger.info('Pipeline start')
-
-        train_dir = self.data_path + '/train/'
-        validation_dir = self.data_path + '/test/'
 
         prepr_cfg = self._cfg['preprocessing']
         self.preprocessor = FruitsPreprocessor(prepr_cfg)
         logger.debug(f'Preprocessor\'s params:{prepr_cfg["params"]}')
         logger.debug(f'Preprocessor\'s unification steps:{prepr_cfg["unification_steps"]}')
         logger.debug(f'Preprocessor\'s processing steps:{prepr_cfg["processing_steps"]}')
-        self.prepare_train_test(
-            train_dir, 
-            validation_dir, 
-            preprocessor=self.preprocessor
-        )
 
         self.launch_selected_mode()
-
-        if self.validate_flag:
-            logger.info('Validate option was chosen, validating model...')
-            self.validate()
 
         logger.info('Done.')

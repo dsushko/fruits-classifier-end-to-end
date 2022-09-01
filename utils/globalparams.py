@@ -7,7 +7,7 @@ class GlobalParams:
     data_path: str = './data/'
     models_cfg_path: str = './cfg/model/'
     explainability_results: str = './explainability_demo/'
-    saved_models_folder: str = '/saved_models/'
+    saved_models_folder: str = 'saved_models/'
 
     @staticmethod 
     def count_classes():

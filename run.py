@@ -15,12 +15,17 @@ from utils.globalparams import GlobalParams
     help='Defines whether to make validation step',
     is_flag=True
 )
+@click.option(
+    '--explainability-path', '-p',
+    help='Defines whether to make validation step',
+)
 def main(mode: str = 'train',
          build: str = 'baseline',
-         validate_flag: bool = False):
+         validate_flag: bool = False,
+         explainability_path: str = ''):
 
     GlobalParams().update_params({'build': build})
-    running_pipeline = ModelRunner(mode, validate_flag)
+    running_pipeline = ModelRunner(mode, validate_flag, explainability_path)
     running_pipeline.run()
     
 

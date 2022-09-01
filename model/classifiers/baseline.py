@@ -12,3 +12,10 @@ class BaselineClassifier:
     
     def predict(self, X):
         return self.model.predict(X)
+
+    @staticmethod
+    def load_clf(path):
+        pass
+
+    def save_clf(path):
+        pass
