@@ -4,9 +4,4 @@ hyperopt
 сертификации
 learn design patterns - шаблоны проектирования - банда четырех
 ---
-optuna - random train val split
 high confidence error
-gpu?   
-batch? 
-сохранение в файл резов тюнинга - uuid64 папка
-где будет лежать результат

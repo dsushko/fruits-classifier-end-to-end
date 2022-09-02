@@ -1,18 +1,14 @@
 ---
 image_size:
   - 128
-  - 64
 batch_size: 
   - 35
   - 50
-  - 75
 loss:
   - 'categorical_crossentropy'
 optimizer: 
   - 'adam'
 epochs: 
-  - 15
-  - 20
-  - 25
+  - 1
 enable_early_stopping: 
  - true

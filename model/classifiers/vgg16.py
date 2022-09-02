@@ -8,7 +8,7 @@ from keras.models import model_from_json
 from tensorflow import keras
 from tensorflow.keras import layers
 import tensorflow as tf
-from model.classifiers.config import KerasNetworkConfig
+from model.classifiers.config import KerasNetworkConfig, KerasNetworkParamGridConfig
 
 from sklearn.utils import shuffle
 
@@ -23,7 +23,7 @@ TRAINED_MODEL_SAVE_PATH = \
 
 @EligibleModules.register_classifier
 class VGG16Classifier:
-    
+    param_grid_class = KerasNetworkParamGridConfig
     def __init__(self, **kwargs):
         for param, val in KerasNetworkConfig.parse_obj(kwargs):
             setattr(self, param, val)

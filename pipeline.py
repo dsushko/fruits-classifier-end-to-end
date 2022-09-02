@@ -1,16 +1,21 @@
 import logging
 import os
+from random import shuffle
 
 import cv2
+import optuna
 import pickle
+import uuid
 
 from model.config import ModelConfig
 
 import numpy as np
 import pandas as pd
 
+
 from sklearn.metrics import accuracy_score
 from sklearn.preprocessing import LabelEncoder
+from sklearn.utils import shuffle
 from utils.eligiblemodules import EligibleModules
 from utils.globalparams import GlobalParams
 from model.preprocessing.preprocessor import FruitsPreprocessor
@@ -31,13 +36,13 @@ class ModelRunner:
             load_cfg(GlobalParams().build_cfg_path())
         ).dict()
 
-        classifier_name = self._cfg['classifier']['name']
-        classifier_params = self._cfg['classifier']['params']
+        self.classifier_name = self._cfg['classifier']['name']
+        self.classifier_params = self._cfg['classifier']['params']
 
-        logger.info(f'Initializing {classifier_name}...')
+        logger.info(f'Initializing {self.classifier_name}...')
 
         self.classifier = \
-            EligibleModules().classifiers[classifier_name](**classifier_params)
+            EligibleModules().classifiers[self.classifier_name](**self.classifier_params)
 
         self.data_path = GlobalParams().data_path
         self.validate_flag = validate_flag
@@ -120,10 +125,11 @@ class ModelRunner:
     def load_clf(self):
         return self.classifier.load_clf()
 
-    def predict(self):
+    def predict(self, save_preds=True):
         logger.info('Predicting...')
         self.pred_y = self.classifier.predict(self.test_X)
-        self.save_predictions()
+        if save_preds:
+            self.save_predictions()
 
     def save_predictions(self):
         pd.DataFrame([self.predict_filenames, self.pred_y]).T \
@@ -138,27 +144,27 @@ class ModelRunner:
             self.classifier
         )
 
-    def validate(self):
+    def validate(self, matrix=True):
         validator = ClassifierValidator()
         logger.info('Validating...')
-        val_stats = \
+        self.val_stats = \
             validator.validate_preds(self.pred_y, self.test_y, metrics=[accuracy_score])
-        logger.info(f'Validation results: {val_stats}')
-        logger.debug(f'Confusion matrix:')
-        for matrix_ind in range(len(validator.confusion_matrix)):
-            logger.debug(f'{validator.cf_labels[matrix_ind]}: {list(validator.confusion_matrix[matrix_ind])}')
+        logger.info(f'Validation results: {self.val_stats}')
+        if matrix:
+            logger.debug(f'Confusion matrix:')
+            for matrix_ind in range(len(validator.confusion_matrix)):
+                logger.debug(f'{validator.cf_labels[matrix_ind]}: {list(validator.confusion_matrix[matrix_ind])}')
 
     def launch_selected_mode(self):
-        if self.mode == 'train':
-            train_dir = self.data_path + '/train/'
+        train_dir = self.data_path + '/train/'
+        validation_dir = self.data_path + '/test/'
 
+        if self.mode == 'train':
             self.train_X, self.train_y = \
                 self.prepare_data_from_folder(train_dir, preprocessor=self.preprocessor)
 
             self.train()
         if self.mode == 'predict':
-            validation_dir = self.data_path + '/test/'
-
             self.test_X, self.test_y, self.predict_filenames = \
                 self.prepare_data_from_folder(
                     validation_dir, 
@@ -176,7 +182,69 @@ class ModelRunner:
             self.classifier = self.load_clf()
             self.explainability(self.img_path_to_explain)
         if self.mode == 'tuning':
+            X, y = \
+                self.prepare_data_from_folder(
+                    train_dir, 
+                    preprocessor=self.preprocessor
+                )
+
+            model = EligibleModules().classifiers[self.classifier_name]
+            params_grid = \
+                EligibleModules().classifiers[self.classifier_name] \
+                    .param_grid_class \
+                    .parse_obj(
+                        load_cfg(
+                            os.path.join(
+                                GlobalParams().tuning_cfg_path,
+                                GlobalParams().build + '.yaml'
+                            )
+                        )
+                    )
+            objective = \
+                lambda trial: self.model_optimization_trial(
+                    X, y,
+                    trial, 
+                    model, 
+                    params_grid, 
+                    'accuracy_score'
+                )
+            study_name = f'vgg16-{str(uuid.uuid4())}'
+            study = optuna.create_study(
+                study_name=study_name, 
+                direction='minimize'
+            )
+            study.optimize(objective, n_trials=2)
+            study_results = study.trials
+
+            results_dir = os.path.join(GlobalParams().tuning_results_path, study_name)
+
+            os.mkdir(results_dir)
+            
+            with open(os.path.join(results_dir, 'all_trials.pkl'), 'wb') as f:
+                pickle.dump(study_results, f)
+            with open(os.path.join(results_dir, 'best_params.pkl'), 'wb') as f:
+                pickle.dump(study.best_params, f)
             pass
+    
+    def model_optimization_trial(self, X, y, trial, model, params_grid, metric):
+        self.classifier = model(**{
+            param: trial.suggest_categorical(param, variants)
+            for param, variants in params_grid.dict().items()
+        })
+
+        data_size = X.shape[0]
+        train_size = int(data_size*0.8)
+
+        X_shuffled, y_shuffled = shuffle(X, y)
+
+        self.train_X, self.train_y = X_shuffled[:train_size, ...], y_shuffled[:train_size]
+        self.test_X, self.test_y = X_shuffled[train_size:, ...], y_shuffled[train_size:]
+
+        self.train()
+        self.predict(save_preds=False)
+        self.validate(matrix=False)
+
+        return self.val_stats[metric]
 
     def run(self):
         logger.info('Pipeline start')

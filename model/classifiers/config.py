@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -13,3 +13,11 @@ class KerasNetworkConfig(BaseModel):
     optimizer: str = Field()
     epochs: int = Field()
     enable_early_stopping: Optional[bool] = Field(default=False)
+
+class KerasNetworkParamGridConfig(BaseModel):
+    image_size: List[int] = Field()
+    batch_size: List[int] = Field()
+    loss: List[str] = Field()
+    optimizer: List[str] = Field()
+    epochs: List[int] = Field()
+    enable_early_stopping: Optional[List[bool]] = Field(default=False)

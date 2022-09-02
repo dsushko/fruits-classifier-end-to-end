@@ -6,6 +6,8 @@ class GlobalParams:
     build: str
     data_path: str = './data/'
     models_cfg_path: str = './cfg/model/'
+    tuning_cfg_path: str = './cfg/tuning/'
+    tuning_results_path: str = './data/tuning_results/'
     explainability_results: str = './explainability_demo/'
     saved_models_folder: str = 'saved_models/'
 
