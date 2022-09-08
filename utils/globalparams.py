@@ -19,10 +19,6 @@ class GlobalParams:
     def build_cfg_path():
         return GlobalParams.models_cfg_path + GlobalParams.build + '.yaml'
 
-    #@staticmethod
-    #def build_local_model_path():
-    #    return os.path.join(GlobalParams().data_path, '/saved_models/', build, build + 'json')
-
     def __new__(cls):
         if GlobalParams.__instance is None:
             GlobalParams.__instance = object.__new__(cls)

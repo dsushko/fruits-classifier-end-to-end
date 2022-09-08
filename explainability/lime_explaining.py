@@ -19,8 +19,12 @@ class LimeExplainer:
             setattr(self, param, val)
         self.explainer = lime_image.LimeImageExplainer()
 
-    def make_explainability_example(self, pic_path, preprocessor, trained_model):
-        img_to_explain = read_rgb_image(pic_path)
+    def make_explainability_example(self, 
+                                    img_to_explain, 
+                                    true_label, 
+                                    img_filename, 
+                                    preprocessor, 
+                                    trained_model):
         img_to_explain = preprocessor.preprocess_one(img_to_explain)
         pred = label_to_num(
             trained_model.labels,
@@ -38,8 +42,7 @@ class LimeExplainer:
             num_features=self.num_features,
             min_weight=self.min_weight
         )
-        img_filename = os.path.basename(pic_path)
-        img_class = pic_path.replace('/', '\\').split('\\')[-2]
+        img_class = true_label
         io.imsave(
             os.path.join(
                 GlobalParams().explainability_results, 
@@ -55,3 +58,16 @@ class LimeExplainer:
             ),
             img_to_explain, 
         )
+
+    def make_explainability_example_from_file(self, pic_path, preprocessor, trained_model):
+        img_to_explain = read_rgb_image(pic_path)
+        img_filename = os.path.basename(pic_path)
+        label = pic_path.replace('/', '\\').split('\\')[-2]
+        self.make_explainability_example(
+            img_to_explain, 
+            label, 
+            img_filename,
+            preprocessor, 
+            trained_model
+        )
+

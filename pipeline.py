@@ -125,11 +125,14 @@ class ModelRunner:
     def load_clf(self):
         return self.classifier.load_clf()
 
-    def predict(self, save_preds=True):
+    def predict(self, save_preds=True, high_confidence_explainability=True):
         logger.info('Predicting...')
         self.pred_y = self.classifier.predict(self.test_X)
         if save_preds:
             self.save_predictions()
+        if high_confidence_explainability:
+            self.high_confidence_explainability()
+            pass
 
     def save_predictions(self):
         pd.DataFrame([self.predict_filenames, self.pred_y]).T \
@@ -138,11 +141,36 @@ class ModelRunner:
     def explainability(self, img_path):
         logger.info('Explaining given example')
         explainer = LimeExplainer()
-        explainer.make_explainability_example(
+        explainer.make_explainability_example_from_file(
             img_path,
             self.preprocessor, 
             self.classifier
         )
+    
+    def high_confidence_explainability(self):
+        wrong_preds_mask = self.pred_y != self.test_y
+        wrong_preds = pd.DataFrame(
+                self.classifier.prob_preds, 
+                columns=self.classifier.labels
+            )
+        high_confidence_mask = wrong_preds.apply(lambda x: (x >= 0.8).any(), axis=1) & wrong_preds_mask
+        actual_labels = self.test_y[high_confidence_mask]
+        high_confidence_images = self.test_X[high_confidence_mask]
+        actual_labels, high_confidence_images, wrong_preds  = \
+            shuffle(actual_labels, high_confidence_images, wrong_preds[high_confidence_mask])
+        actual_labels_sample = actual_labels[:5]
+        high_confidence_images_sample = high_confidence_images[:5, ...]
+        wrong_preds_sample = wrong_preds[:5]
+        explainer = LimeExplainer()
+        for i in range(5):
+            explainer.make_explainability_example(
+                high_confidence_images_sample[i],
+                actual_labels_sample[i],
+                f'{np.round(wrong_preds_sample.iloc[i].max(), 2)}_confidence_{i}.jpg',
+                self.preprocessor, 
+                self.classifier
+            )
+        pass
 
     def validate(self, matrix=True):
         validator = ClassifierValidator()
