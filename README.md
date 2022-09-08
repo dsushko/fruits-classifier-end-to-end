@@ -11,11 +11,11 @@ potato, raddish, spinach, tomato, turnip, watermelon.
 Model runs with
 
 ```
-python run.py %build% %action% (-v) (-p)
+python run.py %action% %build% (-v) (-p)
 ```
 ```build``` - model to fit and predict, currently there are ```baseline``` (SVM classifer) and ```vgg16``` (VGG16 neural network model architecture Imagenet-based) options
 
-```action``` - one of ```train```, ```predict```, ```explainability```
+```action``` - one of ```train```, ```predict```, ```explainability```, ```tuning```
 
 ```-v``` - if ```action=predict```, model validation will be performed (validation score & confusion matrix)
 
